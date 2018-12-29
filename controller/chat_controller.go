@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"golang.org/x/net/websocket"
 	"net/http"
+	"strconv"
 
+	"github.com/keiya01/chat_room/http/request"
 	"github.com/keiya01/chat_room/model"
 	"github.com/keiya01/chat_room/service"
 )
@@ -14,27 +15,6 @@ type ChatController struct{}
 
 func NewChatController() *ChatController {
 	return &ChatController{}
-}
-
-func (c *ChatController) Index(w http.ResponseWriter, r *http.Request) {
-	s := service.NewService()
-	chat := []model.Chat{}
-
-	var resp model.Response
-	if err := s.FindAll(&chat, "created_at asc"); err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		w.Header().Add("Content-Type", "application/json")
-		resp.Error = model.NewError("データを取得できませんでした")
-
-		json.NewEncoder(w).Encode(resp)
-
-		return
-	}
-
-	resp.Data = chat
-
-	json.NewEncoder(w).Encode(resp)
-
 }
 
 func (c *ChatController) Create(w http.ResponseWriter, r *http.Request) {
@@ -55,8 +35,17 @@ func (c *ChatController) Create(w http.ResponseWriter, r *http.Request) {
 				s := service.NewService()
 				defer s.Close()
 
-				p := model.NewChat(reply)
-				s.Create(p)
+				param := request.GetParam(r, "room_id")
+				roomID, err := strconv.Atoi(param)
+				if err != nil {
+					panic(err)
+				}
+
+				chat := model.Chat{
+					Body:   reply,
+					RoomID: roomID,
+				}
+				s.Create(&chat)
 			}()
 
 			if err = websocket.Message.Send(ws, reply); err != nil {

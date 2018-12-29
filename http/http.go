@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/keiya01/chat_room/auth"
 	"github.com/keiya01/chat_room/controller"
 )
 
@@ -30,24 +31,25 @@ func (s *Server) routes() {
 	s.Use(middleware.Logger)
 	s.Use(middleware.URLFormat)
 	s.Use(render.SetContentType(render.ContentTypeJSON))
+	s.Use(auth.JWTAuthentication) // ここでJWTの認証を行う
 
 	c := controller.NewChatController()
+	r := controller.NewRoomController()
+	u := controller.NewUserController()
 
 	s.Route("/api", func(api chi.Router) {
 		api.Route("/chat", func(chat chi.Router) {
-			chat.Get("/", c.Index)
-			chat.Get("/create", c.Create)
-			// posts.Post("/create", p.Create)
-			// posts.Put("/{id}/update", p.Update)
-			// posts.Delete("/{id}/delete", p.Delete)
+			chat.Get("/{room_id}", c.Create)
 		})
-		// api.Route("/users", func(users chi.Router) {
-		// 	users.Post("/login", u.Login)
-		// 	users.Post("/create", u.Create)
-		// 	users.Get("/{id}", u.Show)
-		// 	users.Put("/{id}/update", u.Update)
-		// 	users.Delete("/{id}/delete", u.Delete)
-		// })
+		api.Route("/rooms", func(rooms chi.Router) {
+			rooms.Get("/", r.Index)
+			rooms.Get("/{room_id}", r.Show)
+		})
+		api.Route("/users", func(users chi.Router) {
+			users.Post("/", u.Create)
+			users.Post("/login", u.Login)
+			users.Patch("/update", u.Update)
+		})
 	})
 
 }
@@ -63,8 +65,9 @@ func (s *Server) Run() {
 }
 
 func corsNew() *cors.Cors {
+	acceptURI := "http://localhost:3000"
 	cors := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{acceptURI},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
