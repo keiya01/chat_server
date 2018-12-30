@@ -44,6 +44,7 @@ func (s *Server) routes() {
 		api.Route("/rooms", func(rooms chi.Router) {
 			rooms.Get("/", r.Index)
 			rooms.Get("/{room_id}", r.Show)
+			rooms.Post("/create", r.Create)
 		})
 		api.Route("/users", func(users chi.Router) {
 			users.Post("/", u.Create)

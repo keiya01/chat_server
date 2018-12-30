@@ -80,3 +80,26 @@ func (r *RoomController) Show(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 
 }
+
+func (r *RoomController) Create(w http.ResponseWriter, req *http.Request) {
+	s := service.NewService()
+	defer s.Close()
+
+	var room model.Room
+	json.NewDecoder(req.Body).Decode(&room)
+	var resp model.Response
+	if err := s.Create(&room); err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		w.Header().Add("Content-Type", "application/json")
+
+		resp.Error = model.NewError("ルームの作成に失敗しました")
+
+		json.NewEncoder(w).Encode(resp)
+	}
+
+	resp.Data = room
+	resp.Message = "ルームの作成に成功しました。"
+
+	json.NewEncoder(w).Encode(resp)
+
+}
