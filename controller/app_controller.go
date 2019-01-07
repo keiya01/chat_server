@@ -26,3 +26,12 @@ func SetNextPage(r *http.Request) (initPage, nextPage int) {
 
 	return
 }
+
+func getUserID(r *http.Request) (userID int, ok bool) {
+	param := r.Context().Value("userID")
+	id, ok := param.(float64)
+
+	userID = int(id)
+
+	return
+}

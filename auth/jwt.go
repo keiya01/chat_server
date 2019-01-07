@@ -39,7 +39,7 @@ func (j *JWTToken) GetJWTToken() string {
 	})
 
 	// 電子署名
-	tokenString, _ := token.SignedString([]byte(os.Getenv("SIGNINGKEY")))
+	tokenString, _ := token.SignedString([]byte(os.Getenv("CHAT_ROOM_SIGNINKEY")))
 
 	return tokenString
 }
@@ -48,11 +48,14 @@ func (j *JWTToken) GetJWTToken() string {
 func JWTAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		// jwtはセッションを安全に管理するために使う
 		// このサーバーにリクエストを送るための権限は秘密鍵と公開鍵で行う
-		notAuth := []string{"/api/users/create", "/api/users/login"} //List of endpoints that doesn't require auth
-		requestPath := r.URL.Path                                    //current request path
+		notAuth := []string{
+			"/api/users/create",
+			"/api/users/login",
+			"/api/rooms",
+		} //List of endpoints that doesn't require auth
+		requestPath := r.URL.Path //current request path
 
 		//check if request does not need authentication, serve the request if it doesn't need it
 		for _, value := range notAuth {
@@ -87,7 +90,7 @@ func JWTAuthentication(next http.Handler) http.Handler {
 		tokenPart := splitted[1] //Grab the token part, what we are truly interested in
 
 		token, err := jwt.Parse(tokenPart, func(token *jwt.Token) (interface{}, error) {
-			return []byte(os.Getenv("SIGNINGKEY")), nil
+			return []byte(os.Getenv("CHAT_ROOM_SIGNINKEY")), nil
 		})
 
 		if err != nil { //Malformed token, returns with http code 403 as usual

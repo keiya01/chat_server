@@ -5,4 +5,5 @@ type Room struct {
 	Name       string `json:"name"`
 	Question   string `json:"question"`
 	IsResolved bool   `json:"is_resolved"`
+	UserID     int    `json:"user_id"`
 }

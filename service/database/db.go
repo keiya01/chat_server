@@ -13,7 +13,7 @@ type Handler struct {
 
 func NewHandler() *Handler {
 	isTest := os.Getenv("ENV")
-	dbName := "eserver.sqlite3"
+	dbName := "chat_room.sqlite3"
 	if isTest == "TEST" {
 		dbName = "test.sqlite3"
 	}

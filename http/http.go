@@ -47,7 +47,8 @@ func (s *Server) routes() {
 			rooms.Post("/create", r.Create)
 		})
 		api.Route("/users", func(users chi.Router) {
-			users.Post("/", u.Create)
+			users.Get("/show", u.Show)
+			users.Post("/create", u.Create)
 			users.Post("/login", u.Login)
 			users.Patch("/update", u.Update)
 		})
@@ -66,9 +67,9 @@ func (s *Server) Run() {
 }
 
 func corsNew() *cors.Cors {
-	acceptURI := "http://localhost:3000"
+	acceptURI := []string{"http://localhost:3000", "http://127.0.0.1:3000"}
 	cors := cors.New(cors.Options{
-		AllowedOrigins:   []string{acceptURI},
+		AllowedOrigins:   acceptURI,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,

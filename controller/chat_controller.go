@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"golang.org/x/net/websocket"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -18,6 +19,12 @@ func NewChatController() *ChatController {
 }
 
 func (c *ChatController) Create(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := getUserID(r)
+	if !ok {
+		w.WriteHeader(http.StatusForbidden)
+	}
+
 	websocket.Handler(func(ws *websocket.Conn) {
 		defer ws.Close()
 
@@ -27,6 +34,7 @@ func (c *ChatController) Create(w http.ResponseWriter, r *http.Request) {
 			var reply string
 
 			if err = websocket.Message.Receive(ws, &reply); err != nil {
+				log.Panicln(err)
 				fmt.Println("Can't receive")
 				break
 			}
@@ -43,12 +51,14 @@ func (c *ChatController) Create(w http.ResponseWriter, r *http.Request) {
 
 				chat := model.Chat{
 					Body:   reply,
+					UserID: userID,
 					RoomID: roomID,
 				}
 				s.Create(&chat)
 			}()
 
 			if err = websocket.Message.Send(ws, reply); err != nil {
+				log.Println(err)
 				fmt.Println("Can't send")
 				break
 			}

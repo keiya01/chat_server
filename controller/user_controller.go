@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"github.com/keiya01/chat_room/model"
+	"log"
 
 	"github.com/keiya01/chat_room/auth"
 	"github.com/keiya01/chat_room/service"
@@ -13,6 +14,38 @@ type UserController struct{}
 
 func NewUserController() *UserController {
 	return &UserController{}
+}
+
+func (u *UserController) Show(w http.ResponseWriter, r *http.Request) {
+	s := service.NewService()
+	defer s.Close()
+
+	userID, ok := getUserID(r)
+	if !ok {
+		w.WriteHeader(http.StatusForbidden)
+	}
+
+	var resp model.Response
+
+	var user model.User
+	user.ID = userID
+	if err := s.Select("name, email, description").FindOne(&user); err != nil {
+		w.Header().Add("Content-Type", "application/json")
+
+		resp.Error = model.NewError("ログインに失敗しました")
+		json.NewEncoder(w).Encode(resp)
+	}
+
+	token := auth.JWTToken{
+		UserID:    user.ID,
+		UserEmail: user.Email,
+	}
+	jwtToken := token.GetJWTToken()
+
+	resp.Token = jwtToken
+	resp.Data = user
+
+	json.NewEncoder(w).Encode(resp)
 }
 
 func (u *UserController) Create(w http.ResponseWriter, r *http.Request) {
@@ -27,13 +60,15 @@ func (u *UserController) Create(w http.ResponseWriter, r *http.Request) {
 	encryptedPassword := auth.EncryptPassword(params.Password)
 
 	user := model.User{
+		Name:     params.Name,
 		Email:    params.Email,
 		Password: encryptedPassword,
 	}
 
 	var resp model.Response
 	if err := s.Create(&user); err != nil {
-		w.WriteHeader(http.StatusForbidden)
+		log.Println(err)
+
 		w.Header().Add("Content-Type", "application/json")
 		resp.Error = model.NewError("データを保存できませんでした")
 
@@ -48,6 +83,7 @@ func (u *UserController) Create(w http.ResponseWriter, r *http.Request) {
 	jwtToken := token.GetJWTToken()
 
 	resp.Token = jwtToken
+	resp.Data = user
 	resp.Message = "データを保存しました"
 
 	json.NewEncoder(w).Encode(resp)
@@ -64,14 +100,19 @@ func (u *UserController) Login(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	user := model.User{}
-	s.FindOne(&user, "email = ?", params.Email)
-
 	var resp model.Response
+	user := model.User{}
+	if err := s.FindOne(&user, "email = ?", params.Email); err != nil {
+		log.Println(err)
+
+		w.Header().Add("Content-Type", "application/json")
+		resp.Error = model.NewError("ログインに失敗しました")
+
+		json.NewEncoder(w).Encode(resp)
+	}
 
 	isAuth := auth.ComparePassword(params.Password, user.Password)
 	if !isAuth {
-		w.WriteHeader(http.StatusForbidden)
 		w.Header().Add("Content-Type", "application/json")
 		resp.Error = model.NewError("ログインに失敗しました")
 
@@ -86,6 +127,7 @@ func (u *UserController) Login(w http.ResponseWriter, r *http.Request) {
 	jwtToken := token.GetJWTToken()
 
 	resp.Token = jwtToken
+	resp.Data = user
 	resp.Message = "ログインしました"
 
 	json.NewEncoder(w).Encode(resp)
@@ -108,13 +150,14 @@ func (u *UserController) Update(w http.ResponseWriter, r *http.Request) {
 
 	var user model.User
 	if err := s.Update(&user, params); err != nil {
-		w.WriteHeader(http.StatusForbidden)
-		w.Header().Add("Content-Type", "applicaion/json")
+		log.Println(err)
 
+		w.Header().Add("Content-Type", "applicaion/json")
 		resp.Error = model.NewError("データを更新できませんでした")
 		json.NewEncoder(w).Encode(resp)
 	}
 
+	resp.Data = user
 	resp.Message = "データを更新しました"
 
 	json.NewEncoder(w).Encode(resp)
