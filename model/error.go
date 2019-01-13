@@ -1,13 +1,13 @@
 package model
 
 type Error struct {
-	IsErr   bool   `json:"isErr"`
+	IsError bool   `json:"isError"`
 	Message string `json:"message"`
 }
 
-func NewError(errMsg string) Error {
-	return Error{
-		IsErr:   true,
+func NewError(errMsg string) *Error {
+	return &Error{
+		IsError: true,
 		Message: errMsg,
 	}
 }

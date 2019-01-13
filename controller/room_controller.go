@@ -23,8 +23,8 @@ func (r *RoomController) Index(w http.ResponseWriter, req *http.Request) {
 
 	initPage, nextPage := SetNextPage(req)
 
-	var resp model.Response
-	var rooms []model.Room
+	resp := model.Response{}
+	rooms := []model.Room{}
 	if err := s.Select("name, question, is_resolved, created_at").Pagination(initPage, nextPage).FindAll(&rooms, "created_at desc"); err != nil {
 		log.Println(err)
 
@@ -36,7 +36,7 @@ func (r *RoomController) Index(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var roomAuthors []model.User
+	roomAuthors := []model.User{}
 	for _, room := range rooms {
 		var gotUserIDList []int
 		var user model.User
@@ -93,6 +93,7 @@ func (r *RoomController) Show(w http.ResponseWriter, req *http.Request) {
 		resp.Error = model.NewError("ルームのデータを取得できませんでした")
 
 		json.NewEncoder(w).Encode(resp)
+		return
 	}
 
 	var roomAuthor model.User
@@ -104,6 +105,7 @@ func (r *RoomController) Show(w http.ResponseWriter, req *http.Request) {
 		resp.Error = model.NewError("ルーム作成者のデータを取得できませんでした")
 
 		json.NewEncoder(w).Encode(resp)
+		return
 	}
 
 	initPage, nextPage := SetNextPage(req)
@@ -173,6 +175,7 @@ func (r *RoomController) Create(w http.ResponseWriter, req *http.Request) {
 		resp.Error = model.NewError("ルームの作成に失敗しました")
 
 		json.NewEncoder(w).Encode(resp)
+		return
 	}
 
 	resp.Data = room

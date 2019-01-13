@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type Model struct {
 	ID        int       `gorm:"primary_key" json:"id"`
@@ -12,5 +14,5 @@ type Response struct {
 	Token   string      `json:"token"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
-	Error   `json:"error"`
+	*Error  `json:"error"`
 }
